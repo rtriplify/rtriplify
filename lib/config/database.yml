@@ -1,0 +1,267 @@
+namespaces:
+  vocabulary: http://your-webapp.com/vocabulary/
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  owl: http://www.w3.org/2002/07/owl#
+  foaf: http://xmlns.com/foaf/0.1/
+  sioc: http://rdfs.org/sioc/ns#
+  sioctypes: http://rdfs.org/sioc/types#
+  dc: http://purl.org/dc/elements/1.1/
+  dcterms: http://purl.org/dc/terms/
+  skos: http://www.w3.org/2004/02/skos/core#
+  tag: http://www.holygoat.co.uk/owl/redwood/0.1/tags/
+  xsd: http://www.w3.org/2001/XMLSchema#
+  update: http://triplify.org/vocabulary/update#
+  gr: http://purl.org/goodrelations/v1#
+  v: http://www.w3.org/2006/vcard/ns#
+  daml: http://www.daml.org/2001/09/countries/iso-3166-ont#
+
+#queries:
+#  project: SELECT p.id AS id,p.title AS 'dc:title',p.description AS 'sioc:content',u.nickname AS 'sioc:has_creator',p.changed AS 'dcterms:modified',p.created AS 'dcterms:created',p.status FROM project p INNER JOIN user u ON(user_id=u.id)
+#  user: SELECT nickname id,SHA(CONCAT('mailto:',email)) AS 'foaf:mbox_sha1sum',profile AS 'profile@en' FROM user",
+#  update: SELECT p.changed AS id,p.id AS 'update:updatedResource->project' FROM project p
+
+query:
+  shipping:   #the group write it lowercase
+
+    ShippingMethod:
+      gr:DeliveryModeParcelService: name
+      zone->zone: zone
+
+    Zone:
+      rdfs:label: name
+      rdfs:comment: description
+
+    ZoneMember:
+      zone->zone: zone
+      Country->Country: zoneable
+
+    Country: #the model name...write it capitalized
+      ID: iso
+      daml:name: iso_name
+      iso: iso
+      v:name: name
+      daml:code: iso3
+      numcode: numcode  
+      state->State: states
+#      filter:
+#        ID: ">213 and id <224"
+        #iso_name: ='VENEZUELA'
+        #id must be written upcase, otherwis some trouble with standard yaml language
+        #["created_at > ? AND updated_at > ?"]: ["hello","hello]
+        #TODO: do it more the ror way
+
+    State:
+      ID: abbr
+      name: name
+      abrr: abbr
+      Country->Country: country
+
+  product:   #the group write it lowercase
+    Product: #the model name...write it capitalized
+      rdfs:label: name
+      rdfs:comment: description    
+      ID: permalink
+      Property->Property: properties
+      PropertyValue->ProductProperty: product_properties
+      OptionType->OptionType: option_types
+      CategoryName: tax_category.name
+      CategoryDescription: tax_category.description
+
+    Property: #the model name...write it capitalized      
+      ID: name
+      presentation: presentation
+      Prototype->Prototpye: prototypes
+      Product->Product: products
+    ProductProperty:
+      value: value
+
+
+#    TaxCategory:
+#      ID: name
+#      description: description
+      
+    ProductGroup:
+      name: name
+      permalink: permalink
+      Product->Product: cached_products
+
+    Prototype:
+      name: name
+      Property->Property: properties
+      OptionType->OptionType: option_types
+
+    OptionType:
+      ID: name
+      presentation: presentation
+      Prototype->Prototype: prototypes
+
+
+    Variant:
+      Product->Product: product
+      ID: sku
+      #gr:hasCurrency
+      gr:hasCurrencyValue: price
+      weight: weight
+      height: height
+      width: width
+      depth: depth
+      #count_on_hand: count_on_hand
+      OptionValue->OptionValue: option_values
+
+    Taxon:
+      ID: name
+      name: taxonomy.name
+      permalink: permalink
+      Parent->Taxon: parent
+
+
+
+    OptionValue:
+      ID: name
+      position: position
+      presentation: presentation
+      Variant->Variant: variants
+      OptionType->OptionType: option_type
+
+  user:
+    User:
+      firstname: ship_address.firstname
+      lastname: ship_address.lastname
+      role->Role: roles
+
+    Role:
+      name: name
+      ID: name
+
+  paymentmethod:   #the group write it lowercase
+    PaymentMethod: #the model name...write it capitalized
+      gr:PaymentMethod: name
+      description: description
+      filter:
+        active: = 't'
+        #["created_at > ? AND updated_at > ?"]: ["hello","hello]
+        #TODO: do it more the ror way
+#  orders:
+#    sql_query:
+#      query1: select * from products where id > 706676762
+
+
+# Some of the columns of the Triplify queries will contain references to other
+# objects rather than literal values. The following configuration array
+# specifies, which columns are references to objects of which type.
+
+objectProperties:
+  has_creator: movie
+
+# Objects are classified according to their type. However, you can specify
+# a mapping here, if objects of a certain type should be associated with a
+# different class (e.g. classify all users as 'foaf:person'). If you are
+# unsure it is safe to leave this configuration array empty.
+#
+classMap:
+  movie: foaf:person
+  Product: gr:ProductOrServiceModel 
+  ShippingMethod: gr:DeliveryMethod
+
+
+license: http://creativecommons.org/licenses/by/3.0/us/
+
+# Additional metadata
+# You can add arbitrary metadata. The keys of the following array are
+# properties, the values will be represented as respective property values.
+
+metadata:
+  dc:title: test
+  dc:publisher: test
+
+# Set this to true in order to register your linked data endpoint with the
+# Triplify registry (http://triplify.org/Registry).
+# Registering is absolutely recommended, since that allows other Web sites
+# (e.g. peer Web applications, search engines and mashups) to easily find your
+# content. Requires PHP ini variable allow_url_fopen set to true.
+# You can also register your data source manually by accessing register.php in
+# the triplify folder, or at: http://triplify.org/Registry
+
+register: true
+ttl: 0
+cachedir: cache
+
+# Linked Data Depth
+#
+# Specify on which URI level to expose the data - possible values are:
+#  - Use 0 or ommit to expose all available content on the highest level
+#    all content will be exposed when /triplify/ is accessed on your server
+#    this configuration is recommended for small to medium websites.
+#  - Use 1 to publish only links to the classes on the highest level and all
+#    content will be exposed when for example /triplify/user/ is accessed.
+#  - Use 2 to publish only links on highest and classes level and all
+#    content will be exposed on the instance level, e.g. when /triplify/user/1/
+#    is accessed.
+#
+LinkedDataDepth: 2
+
+# Callback Functions
+#
+ # Some of the columns of the Triplify queries will contain data, which has to
+ # be processed before exposed as RDF (literals). This configuration array maps
+ # column names to respective functions, which have to take the data value as a
+ # parameter and return it processed.
+
+CallbackFunctions:
+
+
+# Semantic Pingback
+#
+# This section contains the Semantic Pingback configuration.
+#
+pingback:
+  # Whether X-Pingback header should be exposed and XML-RPC is active.
+  enabled: true
+  #Whether to write Pingbacks with the instance data.
+  write: true
+  #Whether to use mod_rewrite, if it is available...
+  use_mod_rewrite: true
+
+
+# metadata
+
+##
+##  BEGIN OF CONFIGURATION
+##
+
+# You have to specify the operator of this Triplify service. The operator is
+#  usually you or your group or organizationlly you or your group or organiz.
+#  There are two options to specify the operator. The first option is an HTTP
+#  URI that identifies the operator. This is the preferred option.
+#
+operator_uri:
+#/* The second option is the specification by providing a name, a homepage
+# * address, and a URI that identifies the type of the operator.
+# */
+operator_name:
+operator_homepage:
+operator_type:
+#// $provenance['OperatorType'] = 'http://xmlns.com/foaf/0.1/Organization';
+#// $provenance['OperatorType'] = 'http://swrc.ontoware.org/ontology#ResearchGroup';
+
+
+#/* If you have an HTTP URI that identifies your triplified dataset (and that
+# * links to a voiD description of your dataset) specify it here:
+# */
+dataset:
+
+#/* If you have an HTTP URI that identifies the accessed database server specify
+# * it here:
+# */
+database_server:
+
+#/* If you have an HTTP URI that identifies the configuration file used by your
+# * Triplify installation specify it here:
+# */
+mapping:
+
+#
+#//
+#//  END OF CONFIGURATION
+#//
