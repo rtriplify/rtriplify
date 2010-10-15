@@ -66,14 +66,8 @@ class Tripleizer
   #
   def write_model model_name,model_attributes
     puts model_name
-
-    if model_name.to_s == "OptionValue"
-      hello = "Product"
-    end
-    model = Model.new(model_name)   
-    #dtypes =dbd_types model,model.model_attributes
-    #
-   
+    
+    model = Model.new(model_name)      
     data_types= model.get_datatypes
     #build hash
     model.get_rows.each do |item|
@@ -94,6 +88,7 @@ class Tripleizer
               sub_data_types = model.get_datatypes
               extract_id_line(model.model_attributes, subline, item, sub_data_types)
               make_triples(subline, model.model_name , "", sub_data_types,false)
+              #subline.clear
             end
           else
             unless submodel.empty?
@@ -105,10 +100,11 @@ class Tripleizer
                 sub_data_types = model.get_datatypes
                 extract_id_line(model.model_attributes, subline, item,sub_data_types)
                 make_triples(subline, model.model_name , "", sub_data_types,false)
-                subline.clear
+                #subline.clear
               end
             end
           end
+          subline.clear
         else
           write_line = true;
           if v.to_s.include? "."

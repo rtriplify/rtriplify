@@ -1,3 +1,14 @@
+# Please note that this configuration file is using the yaml syntax.
+# If your application doesn't start after installing the rtriplify syntax
+# please make sure, you configured everything properly. Especially in the
+# query-configuration section you have to take care. Easiest way is to use
+# an editor for it. For example Netbeans already have a build in one.
+
+# Please be sure having configured your database configuration properly
+
+
+# all namespaces for your application. Please use them in your application to
+# get the data better linked
 namespaces:
   vocabulary: http://your-webapp.com/vocabulary/
   rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -17,9 +28,32 @@ namespaces:
   daml: http://www.daml.org/2001/09/countries/iso-3166-ont#
 
 #queries:
-#  project: SELECT p.id AS id,p.title AS 'dc:title',p.description AS 'sioc:content',u.nickname AS 'sioc:has_creator',p.changed AS 'dcterms:modified',p.created AS 'dcterms:created',p.status FROM project p INNER JOIN user u ON(user_id=u.id)
-#  user: SELECT nickname id,SHA(CONCAT('mailto:',email)) AS 'foaf:mbox_sha1sum',profile AS 'profile@en' FROM user",
-#  update: SELECT p.changed AS id,p.id AS 'update:updatedResource->project' FROM project p
+# In general there are two possibilites to configure your rdf Data. First is by
+# using sql queries like in the php version of triplify. Please have a look at
+# http://triplify.svn.sourceforge.net/viewvc/triplify/triplify-php/config.dist.php?view=markup
+# to find out how to configure.
+#
+# Secound possibility and may be the more "rails-way" is to use active record.
+# you have two hierarchy levels for configuration. First, the group and secound,
+# the Active record model.
+# A configuration line in the model has always the Schema
+# nameOfField: ar_field
+# ID field has a special meaning. The ID field is always the Subject of the RDF
+# triples.
+# If your model has a relation to another Model you can reference the field by using
+# the "->" symbol. For example if your Country has States just reference it by
+# " state->State: states" before the "->"-Symbol the predicate is written. after the Symbol the
+# referencing model is notated
+# Additional you can define a filter e.g.
+# filter:
+#   ID: ">213 and id <224"
+# Note: in some case lower and Uppercase Notation is Important.
+# the "id" field is alway written uppercase.
+# group is written lowercase
+# Model are written Capitalized like using it in ruby.
+# first time you may be a little bit irritated, but up to now there is
+# no better solution for this issue.
+
 
 query:
   shipping:   #the group write it lowercase
@@ -152,7 +186,7 @@ query:
 # specifies, which columns are references to objects of which type.
 
 objectProperties:
-  has_creator: movie
+  has_creator: person
 
 # Objects are classified according to their type. However, you can specify
 # a mapping here, if objects of a certain type should be associated with a
@@ -160,11 +194,11 @@ objectProperties:
 # unsure it is safe to leave this configuration array empty.
 #
 classMap:
-  movie: foaf:person
+  Movie: foaf:person
   Product: gr:ProductOrServiceModel 
   ShippingMethod: gr:DeliveryMethod
 
-
+#the licence under which you publish your data
 license: http://creativecommons.org/licenses/by/3.0/us/
 
 # Additional metadata
@@ -175,6 +209,7 @@ metadata:
   dc:title: test
   dc:publisher: test
 
+# not yet
 # Set this to true in order to register your linked data endpoint with the
 # Triplify registry (http://triplify.org/Registry).
 # Registering is absolutely recommended, since that allows other Web sites
@@ -184,8 +219,8 @@ metadata:
 # the triplify folder, or at: http://triplify.org/Registry
 
 register: true
-ttl: 0
-cachedir: cache
+#ttl: 0
+#cachedir: cache
 
 # Linked Data Depth
 #
@@ -199,7 +234,7 @@ cachedir: cache
 #    content will be exposed on the instance level, e.g. when /triplify/user/1/
 #    is accessed.
 #
-LinkedDataDepth: 2
+# LinkedDataDepth: 2
 
 # Callback Functions
 #
@@ -219,10 +254,7 @@ pingback:
   # Whether X-Pingback header should be exposed and XML-RPC is active.
   enabled: true
   #Whether to write Pingbacks with the instance data.
-  write: true
-  #Whether to use mod_rewrite, if it is available...
-  use_mod_rewrite: true
-
+  write: true  
 
 # metadata
 
@@ -235,31 +267,13 @@ pingback:
 #  There are two options to specify the operator. The first option is an HTTP
 #  URI that identifies the operator. This is the preferred option.
 #
-operator_uri:
-#/* The second option is the specification by providing a name, a homepage
-# * address, and a URI that identifies the type of the operator.
-# */
+
 operator_name:
 operator_homepage:
 operator_type:
 #// $provenance['OperatorType'] = 'http://xmlns.com/foaf/0.1/Organization';
 #// $provenance['OperatorType'] = 'http://swrc.ontoware.org/ontology#ResearchGroup';
 
-
-#/* If you have an HTTP URI that identifies your triplified dataset (and that
-# * links to a voiD description of your dataset) specify it here:
-# */
-dataset:
-
-#/* If you have an HTTP URI that identifies the accessed database server specify
-# * it here:
-# */
-database_server:
-
-#/* If you have an HTTP URI that identifies the configuration file used by your
-# * Triplify installation specify it here:
-# */
-mapping:
 
 #
 #//
