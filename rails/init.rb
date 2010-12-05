@@ -20,11 +20,11 @@ ActionController::Routing::Routes.draw do |map|
 end
 
 #["rtriplify"].each do |plugin_name|
-  reloadable_path = RAILS_ROOT + "/vendor/plugins/rtriplify/lib"
+#  reloadable_path = RAILS_ROOT + "/vendor/plugins/rtriplify/lib"
 
 #ActiveSupport::Dependencies.load_once_paths.delete(reloadable_path)
 
 
 #configatron.configure_from_yaml('config/database_1.yml')
-configatron.configure_from_yaml('vendor/plugins/rtriplify/lib/config/database.yml')
+#configatron.configure_from_yaml('vendor/plugins/rtriplify/lib/config/database.yml')
 

@@ -1,8 +1,4 @@
 require 'configatron'
 
-module TriplifyHelper
-
-  def tweet(text)
-    "Tweet! #{text}"
-  end
+module TriplifyHelper 
 end

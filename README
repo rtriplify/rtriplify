@@ -1,18 +1,146 @@
-Triplify
-========
+=rtriplify
 
-Introduction goes here.
+==What is rtriplify
+
+rtriplify is a ruby clone of the triplify-php version. It is used to create
+an rdf-mapping of your existing database and serves it's content out to the (semantic)-web.
+It offers several opportunities to improve your application with semantic-data in several
+RDF- and output formats. The following RDF-formats are supported:
+
+* RDF/N3
+* RDFa (eperimental feature - please see details)
+
+You can serve these formats in the following output-formats:
+
+* JSON (N3)
+* RDF/N3 file (N3)
+* As hidden div in the view of your application (RDFa)
+
+==How to serve data
+
+You have to do several steps to configure and run a rtriplify instance with your Application.
+For experienced users just do the following steps:
 
 
-Example
-=======
+ (1) install rtriplify
+
+ (2) add "triplify.yml" file to your app/config folder
+
+ (3) configure the mapping
+
+ (4) add route for rtriplify controller (optional)
+
+
+For further information, these steps now in detail:
+
+=== Install rtriplify
+
+The easiest way to install rtriplify is by using ruby gem (of course you need a running ruby/rails environment).
+Just open your command-prompt and input:
+
+ gem install rtriplify
+
+Another possibility is to install triplify as rails-plugin. In this case,
+go to the root folder of you application and install it by executing the following command on your commandline:
+
+ ruby script/plugin install http://github.com/rtriplify/rtriplify.git
+
+Of course you can download the source from github and install it manually too.
+
+=== Add config
+
+rtriplify just starts with your application, if you have placed a "triplify.yml" config file in the "app/config" folder of your application.
+Please add such a file. Easily download the sample config file from http://abc.de.
+This config file located at lib/config/triplify_demo.yml folder of your triplify installation directory.
+(if installed as plugin you can find it at your-app-folder/vendor/plugin/rtriplify/lib/config/triplify_demo.yml)
+
 
 gem install rtriplify
 
+then place a triplify.yml file in the config folder of your RoR-application.
+Probably it's the best idea to use the sample config file included in the gem or
+you can download a clean sample file here [3] too.
+
+Usaly the sample config has all configuration possibilitys inside of it and
+it's well documented. I think you can start now and change the config so that it
+will fit to your Application.
+
+Now, you want to see your nice RDF-Data?
+
+just add following route in the route.config:
+
+ map.connect 'triplify/*specs', :controller => 'triplify', :action => "tripleize"
+
+that's it. Now just go to http://your-app.com/triplify/ and you will get the full
+RDF dump of your database. (If you haven't changed the data-depth part in the config)
+
+That's all the magic.
+For detailed documentation I'll go on detail on some of the config sections.
 
 
 
-Example goes here.
+-configuration
+
+Field:
+
+Class
+    attribute_name: field_name
+
+    it's referenced in another model?
+    attribute_name:  submodel.field_name
+
+    Reference to another RDF-Class?
+
+    attribute_name-> Ref_class: ref_model.reference_id
+
+    multiple refenced class items?
+
+    attrubute_name->Ref_class: ref_model*reference_id
+
+    Reerence to a static model?
+
+    attrubute_name->Ref_class:  MODEL( 'model-class','rdf-resource class')*field_name or, if multiple values
+
+    Want to define a const value that is not in your database?
+
+    attr_name:   CONST(gr:Sell,gr:datatype)
+    attr_name:   CONST(gr:Sell,LINK)
+
+    you want to define a sql_query?
+
+    Class:
+        sql_query: sql_query like in triplify ..See here for further information
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+In addition you have the possibility to generate RDFa -Data and place it inside of
+your webpage as a hidden div. Please be aware that this is not the clean way to
+serve your content as RDFa. But I think, if you have generated the mapping file
+for your database it's just the consequence to place RDFa on your page instead.
+RTriplify gives you the right tools to place RDFa tags on your Webpage without having
+to do a full code review of your templates. And of course, search engines like google
+and yahoo already watch for these tags. Google already rewards RDFa tags with some specials.
+For further informations please see here [1] or [2] here
+
+
+===Links:
+[1]http://www.google.com/support/webmasters/bin/answer.py?hl=en&answer=99170
+[2]http://developer.yahoo.com/searchmonkey/    (sadly this project is discontinued)
+
+
+
+===Links:
+[3] sample config
 Copyright (c) 2010 Nico Patitz, released under the MIT license

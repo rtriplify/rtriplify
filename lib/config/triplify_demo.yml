@@ -1,0 +1,242 @@
+# Please note that this configuration file is using the yaml syntax.
+# If your application doesn't start after installing the rtriplify syntax
+# please make sure, you configured everything properly. Especially in the
+# query-configuration section you have to take care. Easiest way is to use
+# an editor for it. For example Netbeans already have a build in one.
+
+# Please be sure having configured your database configuration properly
+# Now let's start with the Configuration
+
+
+# all namespaces for your application. Please use them in your application to
+# get the data better linked
+namespaces:
+  xmlns: http://www.w3.org/1999/xhtml/
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  xsd: http://www.w3.org/2001/XMLSchema#
+  foaf: http://xmlns.com/foaf/0.1/
+  sioc: http://rdfs.org/sioc/ns#
+  sioctypes: http://rdfs.org/sioc/types#
+  dc: http://purl.org/dc/elements/1.1/
+  dcterms: http://purl.org/dc/terms/
+  skos: http://www.w3.org/2004/02/skos/core#
+  tag: http://www.holygoat.co.uk/owl/redwood/0.1/tags/
+
+  update: http://triplify.org/vocabulary/update#
+  gr: http://purl.org/goodrelations/v1#
+  vc: http://www.w3.org/2006/vcard/ns#
+  daml: http://www.daml.org/2001/09/countries/iso-3166-ont#
+
+#query:
+# In general there are two possibilites to configure your rdf Data. First is by
+# using sql queries like in the php version of triplify. Please have a look at
+# http://triplify.svn.sourceforge.net/viewvc/triplify/triplify-php/config.dist.php?view=markup
+# to find out how model your querys
+#
+# Secound possibility and may be the more "rails-way" is to use active record.
+# you have two hierarchy levels for configuration. First-level, the RDF-Resource-class and in secound-level,
+# the Active record model.
+#
+# A configuration line in the model has always the Schema
+# nameOfField: ar_field
+# ID field has a special meaning. The ID field is always the Subject of the RDF
+# triples.
+# If your model has a relation to another Model you can reference the field by using
+# the "->" symbol. For example if your Country has States just reference it by
+# " state->State: states" before the "->"-Symbol the predicate is written. after the Symbol the
+# referencing model is notated
+# Additional you can define a filter e.g.
+# filter:
+#   ID: ">213 and id <224"
+# Note: in some case lower and Uppercase Notation is Important.
+# the "id" field is alway written uppercase.# 
+# Models are written Capitalized like using it in ruby.
+
+
+
+
+query:       #starting the query section
+# The best way always is
+  Offer:     #the RDF-resource-class
+    Variant:    # the model
+      # the simple predicate: field_name config
+      hasStockKeepingUnit: sku
+      # use 
+      # gr:hasStockKeepingUnit: sku to set the rdf-schema class
+      
+      #predicate  "gr:name" has the value field product.name      
+      gr:name: product.name   
+      gr:description: product.description
+      # if you have some constant strings use this function
+      # CONST( predicate, LINK) or
+      # CONST( predicate, datatype) datatype is e.g. xsd:string
+      # please refer to UnitPriceSpecification for an example
+      gr:hasBusinessFunction: CONST(gr:Sell,LINK) 
+      # you have a reference to another object the config qoes like:        
+      # predicate->RDF-Resource-class: id of the referenced RDF-Resource-class
+      # please see UnitPriceSpecification
+      gr:hasPriceSpecification->UnitPriceSpecification: id  
+      # Sometime it can happen thate you have a static ref to some Values
+      # MODEL( 'model-class','rdf-resource class').field_name or, if multiple values
+      # MODEL( 'model-class','rdf-resource class')*field_name or, if multiple values
+      gr:acceptedPaymentMethods->Payment: MODEL('PaymentMethod','Payment')*id    
+
+  # A Variant of a Product
+  Variant:     #the RDF-resource-class
+    Variant:   # the Model
+      gr:name: product.name
+      gr:description: product.description
+      gr:hasStockKeepingUnit: sku     
+      gr:isVariantOf->Product: product.permalink
+      # predicate->RDF-ressource-class and a link on multiple id values
+      gr:qualitativeProductOrServiceProperty->VariantProp: option_values*id
+    # add one or multiple fields by direct sql command
+    # better not to use this feature! Please proof if there is not another configuration possibility
+    sql_query: 
+      query1: Select v.id, ov.name as 'gr:Color' from Variants v, option_values_variants ovv,option_values ov,option_types ot where ovv.variant_id=v.id and ov.id = ovv.option_value_id and ov.option_type_id=ot.id and ot.id =643188970
+  # some properties of the Variant
+  VariantProp:
+    OptionValue:
+      rdfs:subClassOf: CONST(gr:QualitativeValue,LINK)
+      name: name
+      presentation: presentation
+  # a prodct e.g. a T-shirt or a bag...
+  Product:
+    Product:
+      ID: permalink
+      gr:name: name
+      gr:description: description
+      # again some multiple sub-properties
+      gr:qualitativeProductOrServiceProperty->ProductProp: product_properties*id
+      #gr:category
+  # some subproperties of the product..e.g. the color or size
+  ProductProp:
+    ProductProperty:
+      rdfs:subClassOf: CONST(gr:QualitativeValue,LINK)
+      value: value
+      propertyName: property.name
+      rdfs:label: property.presentation
+  # accepted payment methods
+  Payment:
+    PaymentMethod:
+      #rdfs:type: type
+      rdf:label: name
+      rdf:description: description
+      # a filter description
+      # up to now there are only static filters possible
+      filter:
+        # field_to_filter: filter value.... in sql its the " where active = 't' "
+        active: = 't'
+        environment: = 'development'
+  # the price specification for the offer
+  UnitPriceSpecification:
+    Variant:
+      ID: id
+      gr:hasCurrencyValue: price  
+      gr:hasCurrency: CONST(EUR,xsd:string) # adds the [ subject has_curency "EUR" ] triple
+
+# Some of the columns of the Triplify queries will contain references to other
+# objects rather than literal values. The following configuration array
+# specifies, which columns are references to objects of which type. (same like in origin triplify)
+
+objectProperties:
+  has_creator: person
+
+# Objects are classified according to their type. However, you can specify
+# a mapping here, if objects of a certain type should be associated with a
+# different class (e.g. classify all users as 'foaf:person'). If you are
+# unsure it is safe to leave this configuration array empty.   (same like in origin triplify)
+#
+classMap:
+  Offer: gr:Offering                   #the offer
+  Product: gr:ProductOrServiceModel   # the product, for Example the ruby_on_rails t-shirt
+  Variant: gr:ProductOrServiceModel   # for example the blue / XL variant of the ruy_on_rails t-shirt
+  ProductProp: gr:ProductOrServiceProperty
+  UnitPriceSpecification: gr:UnitPriceSpecification 
+  Payment: gr:PaymentMethod
+
+
+
+#the licence under which you publish your data
+license: http://creativecommons.org/licenses/by/3.0/us/
+
+# Additional metadata
+# You can add arbitrary metadata. The keys of the following array are
+# properties, the values will be represented as respective property values.
+
+metadata:
+  dc:title: spree-demo Shop
+  dc:publisher: Nico Patitz
+
+# not yet
+# Set this to true in order to register your linked data endpoint with the
+# Triplify registry (http://triplify.org/Registry).
+# Registering is absolutely recommended, since that allows other Web sites
+# (e.g. peer Web applications, search engines and mashups) to easily find your
+# content. Requires PHP ini variable allow_url_fopen set to true.
+# You can also register your data source manually by accessing register.php in
+# the triplify folder, or at: http://triplify.org/Registry
+
+register: true
+#ttl: 0
+#cachedir: cache
+
+# Linked Data Depth
+#
+# Specify on which URI level to expose the data - possible values are:
+#  - Use 0 or ommit to expose all available content on the highest level
+#    all content will be exposed when /triplify/ is accessed on your server
+#    this configuration is recommended for small to medium websites.
+#  - Use 1 to publish only links to the classes on the highest level and all
+#    content will be exposed when for example /triplify/user/ is accessed.
+#  - Use 2 to publish only links on highest and classes level and all
+#    content will be exposed on the instance level, e.g. when /triplify/user/1/
+#    is accessed.
+#
+
+linked_data_depth: 2
+
+# Callback Functions
+#
+ # Some of the columns of the Triplify queries will contain data, which has to
+ # be processed before exposed as RDF (literals). This configuration array maps
+ # column names to respective functions, which have to take the data value as a
+ # parameter and return it processed.
+
+#not yet implemented
+CallbackFunctions:
+
+# Semantic Pingback
+#
+# This section contains the Semantic Pingback configuration.
+#
+pingback:
+  # Whether X-Pingback header should be exposed and XML-RPC is active.
+  enabled: true
+  #Whether to write Pingbacks with the instance data.
+  write: true
+
+# metadata   #most of this is the same like you know from the php- triplify
+
+##
+##  BEGIN OF CONFIGURATION
+##
+
+# You have to specify the operator of this Triplify service. The operator is
+#  usually you or your group or organizationlly you or your group or organiz.
+#  There are two options to specify the operator. The first option is an HTTP
+#  URI that identifies the operator. This is the preferred option.
+#
+
+operator_name:
+operator_homepage:
+operator_type:
+#// $provenance['OperatorType'] = 'http://xmlns.com/foaf/0.1/Organization';
+#// $provenance['OperatorType'] = 'http://swrc.ontoware.org/ontology#ResearchGroup';
+
+
+#
+#//
+#//  END OF CONFIGURATION
+#//

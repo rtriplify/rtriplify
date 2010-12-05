@@ -1,14 +1,13 @@
 require  'configatron'
-
+#
 class TriplifyController < ActionController::Base
-  def all
-    #get all models
-    #render all models
-    ret=""
-    t = Tripleizer.new
-    $base_uri= t.uri request.env['REQUEST_URI'].to_s
 
-    filename = 'test.rdf'
+  def tripleize
+    t = Tripleizer.new
+    t.base_uri = t.uri request.env['REQUEST_URI'].to_s
+    depth = configatron.linked_data_depth.to_i
+
+    filename = 'data.n3'
     headers.merge!(
       'Content-Type' => 'text/rdf+n3',
       'Content-Disposition' => "attachment; filename=\"#{filename}\"",
@@ -17,83 +16,85 @@ class TriplifyController < ActionController::Base
 
     t.output_json = request.content_type.try(:to_sym)==:json
     content_type =   t.output_json   ? 'application/json' :  'text/plain'
+
     render :content_type => content_type , :text => proc { |response, output|
-      t.output = output
-      t.write_rdf_head
-      model_groups =  eval("configatron.query").to_hash
-      model_groups.each do |model_group_name,model_group|
-        model_group.each do |model_name,model_attributes|
-          if model_name.to_s =="sql_query"
-            t.write_sql(model_group_name,model_attributes)
-          else
-            t.write_model(model_name, model_attributes)
-          end
-        end
+      t.output = output      
+      case params[:specs].length
+      when 0
+        t.write_rdf_head
+        all t if depth > -1
+      when 1
+        t.base_uri = t.base_uri.to_s[0..t.base_uri.to_s.index(params[:specs][0].to_s)-1]
+        t.write_rdf_head
+        model t, params[:specs][0] if depth >0
+      when 2
+        t.base_uri = t.base_uri.to_s[0..t.base_uri.to_s.index(params[:specs][0].to_s)-1]
+        t.write_rdf_head
+        index t, params[:specs] if depth > 1
       end
-      t_metadata = TriplifyMetadata.new      
+      
+      t_metadata = TriplifyMetadata.new
       t_metadata.write_metadata(t)
-      output.write t.json if  t.output_json
+      output.write t.json if t.output_json
     }
-
   end
 
-  def model
+  private
+  
+  def all t
+    #get all models
+    #render all models
     ret=""
-    t = Tripleizer.new
-    $base_uri= t.uri request.env['REQUEST_URI'].to_s.split(params[:model])[0]
-    render :content_type => 'text/plain', :text => proc {|response, output|
-      t.write_rdf_head(output)
-      model_group= params[:model].to_s #TODO:groß/kleinschreibung.capitalize
-      model_group.downcase!
-      params[:id] ? entries= [params[:id]] : entries = :all
-      #TODO: multiple models
-      models = t.search_models model_group
-      models.each do |model_name, model_attributes|
+    model_groups =  eval("configatron.query").to_hash
+    model_groups.each do |model_group_name,model_group|
+      model_group.each do |model_name,model_attributes|
         if model_name.to_s =="sql_query"
-          t.write_sql(model_group_name,model_attributes,output)
+          t.write_sql(model_group_name,model_attributes,t.output)
         else
-          t.write_model(model_name, model_attributes, output)
+          t.write_model(model_name,model_group_name)
         end
       end
-      #write metadata
-      #t.write_rdf_metadata(t,output)
-    }
+    end
+    ""
   end
 
-  def index
-    ret=""
-    t = Tripleizer.new
-    $base_uri= t.uri request.env['REQUEST_URI'].to_s
-    render :content_type => 'text/plain', :text => proc { |response, output|
-      t.write_rdf_head(output)
-      subclass = $base_uri.split("triplify/")[1].split("/")
-
-      group = eval("configatron.query."+controller).to_hash;
-      group.each do |key,name|
-        model = key.to_s.capitalize
-        model = eval(model)
-        dtypes =t.dbd_types model
-
-        model= model.find(:all)
-        mapping =eval("configatron.query."+controller+"."+key.to_s).to_hash
-
-        model.each do |item|
-          #t.write_triple(item.id, object, is_literal, dtype, lang)
-          c1 = Hash.new
-          #add first the id
-          c1[:id] = item.id
-          #und jetzt das mapping
-          mapping.each do |k,v|
-            c1[k]=eval("item."+v.to_s)
-          end
-
-          output.write t.make_triples(c1, controller , "", dtypes)
-          #render :text =>  t.make_triples(c1, controller , "", t.dbd_types)
+  #get all models
+  def model t, model_group   
+    models = t.find_models model_group
+    if models
+      models.values[0].each do |model_name, model_attributes|
+        if model_name.to_s =="sql_query"
+          t.write_sql(models.keys[0],model_attributes,output)
+        else
+          t.write_model(model_name, models.keys[0])
         end
       end
-      meta = TriplifyMetadata.new
-      t.output=output
-      meta.write_metadata t,output
-    }
+    end
+  end
+
+  # get a defined model with given id
+  def index t,param
+    subclass,id = param
+    models = t.find_models subclass
+    if models
+      models.values[0].each do |model_name, model_attributes|
+        if model_name.to_s =="sql_query"
+          #some magic is needed here  ..parse the sql query?
+        else
+          m = Model.new model_name,  models.keys[0].to_s
+          row_values=m.get_row_by_id(id).first
+          c1=Hash.new
+          if row_values
+            m.model.columns_hash.each_with_index do |column_name,i|
+              c1[column_name[0]]=eval("row_values.#{column_name}")
+            end
+            t.extract_id_line model_attributes, c1,row_values,m.get_datatypes
+            t.make_triples(c1,  models.keys[0].to_s , "", m.get_datatypes)
+          end
+        end
+      end
+    end
+    #render :text =>  t.make_triples(c1, controller , "", t.dbd_types)
+    
   end
 end
